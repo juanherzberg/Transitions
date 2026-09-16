@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transitions Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:   #3B82F6; --blue-bg:   #EFF6FF; --blue-border:   #93C5FD;   /* Continuity  — rule 1 blue   */
+    --red:    #10B981; --red-bg:    #ECFDF5; --red-border:    #6EE7B7;   /* Contrast    — rule 2 green  */
+    --purple: #F97316; --purple-bg: #FFF7ED; --purple-border: #FDBA74;   /* Chronology  — rule 3 orange */
+    --amber:  #8B5CF6; --amber-bg:  #F5F3FF; --amber-border:  #C4B5FD;   /* Consequence — rule 4 purple */
+    --ink: #1F2937; --muted: #6B7280; --line: #E5E7EB;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0; background: #F9FAFB; color: var(--ink);
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 28px 20px 80px; }
+  header.top { text-align: center; margin-bottom: 28px; }
+  header.top h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.02em; }
+  header.top p { font-size: 15px; color: var(--muted); margin: 0; }
+
+  .columns { display: grid; grid-template-columns: 55% 45%; gap: 22px; align-items: start; }
+  @media (max-width: 820px) { .columns { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: #fff; border-radius: 16px; padding: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+  }
+  .panel-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 14px; }
+
+  .bucket { border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; border: 2px solid transparent; transition: box-shadow .15s, border-color .15s, opacity .15s; position: relative; }
+  .bucket:last-child { margin-bottom: 0; }
+  .bucket-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 8px; }
+  .bucket-name { font-size: 15px; font-weight: 700; }
+  .bucket-name .proto { font-weight: 500; opacity: .8; }
+  .bucket-desc { font-size: 12px; font-style: italic; color: var(--muted); margin: 0 0 10px; }
+  .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; color: #fff; }
+  .badge.full { background: #16a34a !important; }
+  .done-tag { font-size: 11px; font-weight: 800; color: #16a34a; margin-left: 8px; white-space: nowrap; }
+  .dropzone {
+    min-height: 60px; border-radius: 10px; padding: 8px;
+    display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;
+    border: 2px dashed; background: rgba(255,255,255,0.55);
+    transition: background .12s, border-style .12s;
+  }
+  .dropzone.empty::before {
+    content: 'Drop words here'; color: var(--muted); font-size: 12px; font-style: italic;
+    opacity: .7; align-self: center; margin: 4px 6px;
+  }
+  .dropzone.dragover { border-style: solid; background: rgba(255,255,255,0.95); }
+
+  /* bucket colors */
+  .b-blue   { background: var(--blue-bg); }   .b-blue   .dropzone { border-color: var(--blue-border); }   .b-blue   .badge { background: var(--blue); }   .b-blue   .bucket-name { color: #1D4ED8; }
+  .b-red    { background: var(--red-bg); }    .b-red    .dropzone { border-color: var(--red-border); }    .b-red    .badge { background: var(--red); }    .b-red    .bucket-name { color: #047857; }
+  .b-purple { background: var(--purple-bg); } .b-purple .dropzone { border-color: var(--purple-border); } .b-purple .badge { background: var(--purple); } .b-purple .bucket-name { color: #C2410C; }
+  .b-amber  { background: var(--amber-bg); }  .b-amber  .dropzone { border-color: var(--amber-border); }  .b-amber  .badge { background: var(--amber); }  .b-amber  .bucket-name { color: #6D28D9; }
+  .b-blue.glow   { border-color: var(--blue);   box-shadow: 0 0 0 3px rgba(59,130,246,.25); }
+  .b-red.glow    { border-color: var(--red);    box-shadow: 0 0 0 3px rgba(16,185,129,.25); }
+  .b-purple.glow { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(249,115,22,.25); }
+  .b-amber.glow  { border-color: var(--amber);  box-shadow: 0 0 0 3px rgba(139,92,246,.25); }
+
+  /* locked buckets */
+  .bucket.locked { opacity: 0.45; pointer-events: none; }
+  .lock-overlay {
+    min-height: 60px; border-radius: 10px; padding: 12px;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; color: var(--muted); font-style: italic; font-size: 13px;
+    border: 2px dashed var(--line); background: rgba(255,255,255,0.4);
+  }
+
+  /* unlock flash animation */
+  @keyframes unlockFlash {
+    0%   { box-shadow: 0 0 0 0 rgba(31,41,55,0); }
+    30%  { box-shadow: 0 0 0 4px rgba(31,41,55,.28); }
+    100% { box-shadow: 0 0 0 0 rgba(31,41,55,0); }
+  }
+  .bucket.just-unlocked { animation: unlockFlash 1s ease-out; }
+  .b-blue.just-unlocked   { border-color: var(--blue); }
+  .b-red.just-unlocked    { border-color: var(--red); }
+  .b-purple.just-unlocked { border-color: var(--purple); }
+  .b-amber.just-unlocked  { border-color: var(--amber); }
+
+  #pool { display: flex; flex-wrap: wrap; gap: 8px; min-height: 80px; }
+  #pool.dragover, #pool.glow { outline: 2px dashed var(--line); outline-offset: 4px; border-radius: 10px; }
+
+  .chip {
+    display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 600;
+    padding: 7px 13px; border-radius: 20px; background: #F3F4F6; color: #374151;
+    border: 1px solid #E5E7EB; cursor: grab; user-select: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06); transition: transform .1s, box-shadow .1s, opacity .1s;
+    touch-action: none;
+  }
+  .chip:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+  .chip:active { cursor: grabbing; }
+  .chip.dragging { opacity: .45; }
+  .chip.selected { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(31,41,55,.18); background: #fff; }
+  .chip.locked-chip { cursor: default; }
+  .chip.locked-chip:hover { box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .dropzone .chip { background: #fff; }
+
+  .actions { text-align: center; margin-top: 28px; display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  button { font-family: inherit; font-weight: 700; cursor: pointer; border: none; border-radius: 12px; transition: filter .12s, opacity .12s; }
+  #checkBtn { background: var(--ink); color: #fff; font-size: 16px; padding: 14px 34px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+  #checkBtn:hover:not(:disabled) { filter: brightness(1.15); }
+  #checkBtn:disabled { background: #D1D5DB; color: #fff; cursor: not-allowed; box-shadow: none; }
+  #resetBtn { background: #fff; color: var(--ink); border: 1.5px solid var(--line); font-size: 14px; padding: 12px 22px; }
+  #resetBtn:hover { background: #F3F4F6; }
+
+  /* inline feedback (inside buckets) */
+  .fb-inline { border-radius: 10px; padding: 4px 2px; }
+  .fb-item { padding: 10px 0; border-top: 1px solid var(--line); }
+  .fb-item:first-of-type { border-top: none; }
+  .fb-label { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .fb-label.ok { color: #16a34a; }
+  .fb-label.bad { color: #dc2626; }
+  .fb-sentence { font-size: 15px; color: #3a3530; line-height: 1.6; }
+  .fb-correction { font-size: 13.5px; color: var(--muted); margin-top: 6px; padding: 8px 12px; background: rgba(255,255,255,0.7); border-radius: 8px; line-height: 1.6; }
+  .fb-correction .cl { font-weight: 700; }
+
+  /* collapsible sentences */
+  .fb-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 0 6px; }
+  .fb-summary-count { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .fb-toggle { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.85); color: var(--ink); border: 1px solid var(--line); cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: inherit; }
+  .fb-toggle:hover { background: #fff; }
+  .fb-sentences { display: none; }
+  .fb-inline.open .fb-sentences { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Transitions Practice</h1>
+  </header>
+
+  <!-- EXAMPLE PROBLEM SECTION -->
+  <div style="background:#fff; border-radius:16px; padding:24px 28px; margin-bottom:28px; box-shadow:0 1px 3px rgba(0,0,0,0.06),0 8px 24px rgba(0,0,0,0.04);">
+
+    <p style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin:0 0 16px;">Example SAT Question</p>
+
+    <!-- The question card -->
+    <div style="border:1.5px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:20px;">
+      <div style="padding:16px 18px;">
+        <p style="font-size:14px; line-height:1.8; color:#374151; margin:0 0 14px;">
+          <span style="color:#1e40af; font-weight:500;">Famous for its four-degree tilt, the leaning Garisenda Tower is a popular attraction in Bologna's city center. However, measurements taken in 2023 showed that the tower was rotating in a concerning way.</span>
+          <span style="font-weight:700; letter-spacing:.05em;"> ________</span>
+          <span style="color:#9a3412; font-weight:500;"> city officials closed the area around the tower so experts could explore solutions to stabilize the historical twelfth-century structure.</span>
+        </p>
+        <p style="font-size:13.5px; font-weight:600; color:var(--ink); margin:0 0 10px;">Which choice completes the text with the most logical transition?</p>
+        <div style="font-size:13.5px; line-height:2; color:#374151;">
+          <div>A)&nbsp; Similarly,</div>
+          <div style="background:#DCFCE7; border-radius:6px; padding:2px 8px; display:inline-block; font-weight:700; color:#166534;">B)&nbsp; As a result, ✓</div>
+          <div>C)&nbsp; For example,</div>
+          <div>D)&nbsp; In comparison,</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thought process -->
+    <p style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 12px;">How to think about it</p>
+    <p style="font-size:13.5px; color:#374151; line-height:1.7; margin:0 0 16px;">
+      On SAT transition questions, don't get lost in the details. <strong>Simplify each side of the blank into one plain idea</strong>, then ask what relationship connects them. Here's how that looks for this question:
+    </p>
+
+    <!-- Simplified breakdown -->
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#F9FAFB; border-radius:12px; padding:16px 18px; margin-bottom:16px;">
+      <div style="background:#EFF6FF; border-radius:10px; padding:10px 14px; flex:1; min-width:160px;">
+        <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#1D4ED8; margin-bottom:4px;">First idea</div>
+        <div style="font-size:13.5px; font-weight:600; color:#1e40af; line-height:1.5;">"The tower was in a dangerous situation."</div>
+      </div>
+      <div style="text-align:center; flex-shrink:0;">
+        <div style="font-size:11px; font-weight:700; color:var(--muted); margin-bottom:2px;">TRANSITION</div>
+        <div style="font-size:15px; font-weight:800; color:#166534; background:#DCFCE7; padding:6px 12px; border-radius:8px;">As a result,</div>
+      </div>
+      <div style="background:#FFF7ED; border-radius:10px; padding:10px 14px; flex:1; min-width:160px;">
+        <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#C2410C; margin-bottom:4px;">Second idea</div>
+        <div style="font-size:13.5px; font-weight:600; color:#9a3412; line-height:1.5;">"Officials took action to protect it."</div>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <div style="background:#1e40af; color:#fff; font-size:11px; font-weight:800; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;">1</div>
+        <p style="margin:0; font-size:13.5px; color:#374151; line-height:1.6;"><strong style="color:#1e40af;">Simplify the first idea.</strong> Ignore the fancy vocabulary. What is the sentence actually saying? <em>The tower was in trouble.</em></p>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <div style="background:#9a3412; color:#fff; font-size:11px; font-weight:800; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;">2</div>
+        <p style="margin:0; font-size:13.5px; color:#374151; line-height:1.6;"><strong style="color:#9a3412;">Simplify the second idea.</strong> What is the sentence after the blank actually saying? <em>People stepped in to deal with it.</em></p>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <div style="background:#374151; color:#fff; font-size:11px; font-weight:800; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;">3</div>
+        <p style="margin:0; font-size:13.5px; color:#374151; line-height:1.6;"><strong>Ask: what is the relationship?</strong> Does the second idea contrast the first? Add to it? Follow from it? Here, the response <em>happened because of</em> the problem. That's <strong>Consequence</strong>. So you need a consequence transition: <strong style="color:#166534;">"As a result."</strong></p>
+      </div>
+    </div>
+
+  </div>
+  <!-- END EXAMPLE PROBLEM SECTION -->
+
+  <div style="text-align:center; margin-bottom:20px;">
+    <p style="font-size:15px; color:var(--ink); margin:0 0 4px;">Drag each word into the correct category, then click Check Answers.</p>
+    <p style="font-size:13px; color:#dc2626; margin:0;">💡 Click on a word once to see an example sentence as a hint.</p>
+  </div>
+
+  <div class="columns">
+    <div class="panel">
+      <p class="panel-title">The 4 C's of Connection</p>
+      <div id="buckets"></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title">Word Pool</p>
+      <div id="pool"></div>
+      <div id="preview" style="display:none; margin-top:14px; padding:12px 14px; background:#F9FAFB; border-radius:10px; border-left:3px solid var(--line);">
+        <div id="preview-label" style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:6px;">Example</div>
+        <div id="preview-sentence" style="font-size:14px; color:#374151; line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="checkBtn" disabled>Check Continuity</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  {
+    id: 'consequence', label: '1 — CONSEQUENCE', prototype: 'Because of this', color: 'blue', count: 9,
+    desc: 'Use this when the second sentence is the result or effect of the first.',
+    words: ['As a result','Because','Consequently','Due to','Hence','In order to','Thanks to','Therefore','Thus']
+  },
+  {
+    id: 'chronology', label: '2 — CHRONOLOGY', prototype: 'Then', color: 'red', count: 14,
+    desc: 'Use this when indicating the order or timing of events.',
+    words: ['After','Before','Currently','Eventually','Finally','First, Second, etc.','Formerly','Immediately','Initially','Lastly','Meanwhile','Next','Previously','Subsequently']
+  },
+  {
+    id: 'contrast', label: '3 — CONTRAST', prototype: 'However', color: 'purple', count: 14,
+    desc: 'Use this when the second sentence conflicts with or contradicts the first.',
+    words: ['Although','But','Conversely','Despite','Even so','However','Nevertheless','Nonetheless','Notwithstanding','On the other hand','Still','Though','Whereas','Yet']
+  },
+  {
+    id: 'continuity', label: '4 — CONTINUITY', prototype: 'Also', color: 'amber', count: 15,
+    desc: 'Use this when adding a related thought to your first sentence.',
+    words: ['Additionally','Also','And','As well as','Furthermore','In fact','In other words','Indeed','Likewise','Moreover','Similarly','Specifically','For example','For instance','Particularly']
+  }
+];
+
+// The bolded token in each sentence (differs from display name for "First, Second, etc.")
+const HIGHLIGHT = { 'First, Second, etc.': 'First' };
+
+const SENTENCES = {
+  // CONTINUITY
+  'Additionally': 'The report documented a sharp decline in coastal fisheries; additionally, it warned that warming waters would accelerate the loss over the coming decade.',
+  'Also': 'Melville drew on his years aboard whaling ships for the plot of the novel, and he also borrowed heavily from earlier maritime accounts he had read.',
+  'And': 'The council approved funding for the new library, and it set aside a smaller grant to renovate the aging community center.',
+  'As well as': 'The exhibition featured sketches by Da Vinci as well as several of the mechanical designs he had drafted late in his career.',
+  'Furthermore': 'The economist argued that the tariffs had raised consumer prices; furthermore, she noted, they had done little to protect domestic manufacturing.',
+  'In fact': 'The senator claimed the bill enjoyed broad support; in fact, it passed the chamber with only three dissenting votes.',
+  'In other words': 'The theory predicts that the particles will scatter symmetrically—in other words, an observer on either side should record identical results.',
+  'Incidentally': 'The composer premiered the symphony in Vienna in 1824; incidentally, it was the last work he would conduct before his hearing failed entirely.',
+  'Indeed': 'The renovation was expected to be costly, and indeed the final bill exceeded the city’s original estimate by nearly a third.',
+  'Likewise': 'Northern states expanded their railroads rapidly in the 1850s; likewise, the South laid new track, though at a far slower pace.',
+  'Moreover': 'The study found that the medication lowered blood pressure; moreover, it appeared to reduce inflammation in most participants.',
+  'Plus': 'The internship offered valuable laboratory experience, plus it came with a modest stipend that helped cover her living expenses.',
+  'Similarly': 'Bees communicate the location of food through movement; similarly, certain ant species lay chemical trails to guide the colony.',
+  'Specifically': 'The grant supports research into renewable energy—specifically, it funds studies on improving the efficiency of solar cells.',
+  'Too': 'The playwright was celebrated for her sharp dialogue, and she was admired, too, for the intricate staging her scripts demanded.',
+  'For example': 'Many everyday objects rely on principles of physics; a bicycle, for example, stays upright largely because of the gyroscopic effect of its spinning wheels.',
+  'For instance': 'Ancient civilizations tracked the seasons through astronomy; the Maya, for instance, built observatories aligned precisely with the movement of Venus.',
+  'Particularly': 'The drought devastated crops across the region, particularly the wheat fields that had depended on the now-vanished spring rains.',
+
+  // CONTRAST
+  'Albeit': 'The negotiations produced a treaty, albeit one so heavily amended that neither side left the table entirely satisfied.',
+  'Although': 'Although the expedition failed to reach the summit, the survey data it collected reshaped how geologists understood the range.',
+  'But': 'The invention promised to revolutionize printing, but it took nearly two decades before the technology became affordable enough for ordinary shops.',
+  'Conversely': 'Warm-blooded animals must eat frequently to maintain body heat; conversely, many reptiles can survive for weeks between meals.',
+  'Despite': 'Despite mounting evidence that the structure was unsafe, the owners delayed repairs for another three years.',
+  'Even so': 'The critics dismissed the film as sentimental; even so, audiences filled theaters for months after its release.',
+  'However': 'The company projected record profits for the quarter; however, an unexpected supply shortage cut its earnings nearly in half.',
+  'Nevertheless': 'The manuscript was riddled with errors when it arrived; nevertheless, the editor recognized at once the brilliance of its central argument.',
+  'Nonetheless': 'The vaccine required careful refrigeration and was difficult to distribute; nonetheless, it eradicated the disease within a generation.',
+  'Notwithstanding': 'Notwithstanding the objections raised by several board members, the university proceeded with its controversial expansion.',
+  'On the other hand': 'Solar power produces no emissions during operation; on the other hand, manufacturing the panels still consumes considerable energy.',
+  'Still': 'The evidence against the defendant was largely circumstantial; still, the jury deliberated for less than an hour before reaching a verdict.',
+  'Though': 'The poet published only a handful of works in her lifetime, though her reputation grew steadily in the decades after her death.',
+  'Whereas': 'The northern colonies built their economies around trade and shipping, whereas the southern colonies relied on large agricultural estates.',
+  'While': 'While the coastline attracted most of the tourists, the interior villages preserved the customs that had faded elsewhere in the country.',
+  'Yet': 'The satellite was designed to last only five years, yet it continued transmitting usable data for more than two decades.',
+
+  // CHRONOLOGY
+  'After': 'After the treaty was signed in Paris, the two nations spent years negotiating the precise borders it had left undefined.',
+  'Before': 'Before the printing press reached Europe, monks copied entire volumes by hand, a labor that could consume years for a single book.',
+  'Currently': 'The spacecraft, launched in the 1970s, is currently the most distant human-made object from Earth.',
+  'Eventually': 'The river shifted its course gradually over centuries and eventually abandoned the valley the ancient city had been built to command.',
+  'Finally': 'The committee reviewed dozens of proposals, debated them for weeks, and finally settled on a design that satisfied nearly everyone.',
+  'First, Second, etc.': 'The scientist outlined her method in stages: first, she isolated the sample; second, she measured its response to heat.',
+  'Formerly': 'The building, now a museum of modern art, was formerly a textile mill that employed hundreds of workers.',
+  'Immediately': 'The alarm sounded, and immediately the crew sealed the bulkheads to keep the flooding from spreading through the ship.',
+  'Initially': 'Initially dismissed as an amateur, the astronomer would later be credited with discovering three previously unknown comets.',
+  'Lastly': 'The guide described the trail’s landmarks in order, and lastly he warned hikers about the steep descent near the summit.',
+  'Meanwhile': 'The general marched his army toward the capital; meanwhile, rebel forces quietly seized the bridges to the north.',
+  'Next': 'The chemist recorded the temperature of the solution and, next, added the catalyst one drop at a time.',
+  'Previously': 'The land, previously used for grazing cattle, was converted into one of the region’s largest wildlife preserves.',
+  'Subsequently': 'The theory was ridiculed when first proposed and was subsequently confirmed by experiments no one had imagined at the time.',
+  'Thereupon': 'The king heard the ambassador’s demands and thereupon dismissed the entire delegation from his court.',
+  'Ultimately': 'The negotiations dragged on through the winter, but they ultimately produced the agreement that ended the long conflict.',
+
+  // CONSEQUENCE
+  'Accordingly': 'The forecast called for a severe storm; accordingly, officials ordered the evacuation of the low-lying coastal towns.',
+  'As a result': 'The factory had dumped waste into the river for decades; as a result, the fish population collapsed within a single generation.',
+  'Because': 'The colony struggled through its first winter because the settlers had arrived too late to plant a proper harvest.',
+  'Consequently': 'The bridge had gone uninspected for years; consequently, engineers were alarmed to find its supports badly corroded.',
+  'Due to': 'Due to a sudden drop in oil prices, the region’s economy, so dependent on exports, slipped into a deep recession.',
+  'Hence': 'The manuscript was written in a nearly forgotten dialect; hence, only a handful of scholars could translate it accurately.',
+  'In order to': 'In order to preserve the fragile documents, the archive kept them in a room where temperature and humidity never varied.',
+  'Since': 'Since the new highway bypassed the town entirely, its once-busy main street fell into a slow decline.',
+  'So': 'The lecture hall had grown far too crowded, so the university moved the popular course to the auditorium next door.',
+  'Thanks to': 'Thanks to a series of unusually mild winters, the vineyard produced its finest vintages in a decade.',
+  'Therefore': 'The experiment could not be replicated by other laboratories; therefore, the journal declined to publish its findings.',
+  'Thereby': 'The engineers rerouted the river around the dam, thereby protecting the villages that lay downstream.',
+  'Thus': 'The census undercounted the rural population by a wide margin; thus, the districts drawn from it were deeply unequal.',
+  'Whereby': 'The two nations established a system whereby disputes over the border would be settled by an independent tribunal.',
+  'Fittingly': 'The pioneering aviator had spent her life chasing horizons; fittingly, a distant crater on the moon now bears her name.',
+  'Given these facts': 'The soil was exhausted, the rains had failed, and the markets had collapsed; given these facts, the farmers abandoned the region altogether.'
+};
+
+const COLOR_CLASS = { blue: 'b-blue', red: 'b-red', purple: 'b-purple', amber: 'b-amber' };
+const CAT_NAME = {}; const WORD_HOME = {};
+CATEGORIES.forEach(c => { CAT_NAME[c.id] = c.label.split('— ')[1]; c.words.forEach(w => WORD_HOME[w] = c.id); });
+
+// Proper-case category name for the button label (e.g. "Continuity")
+function catButtonName(cat) {
+  const raw = CAT_NAME[cat.id];
+  return raw.charAt(0) + raw.slice(1).toLowerCase();
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+function highlighted(word, colorHex) {
+  const token = HIGHLIGHT[word] || word;
+  const sentence = SENTENCES[word] || '';
+  // escape regex special chars in token
+  const esc = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('(' + esc + ')', 'i');
+  if (re.test(sentence)) {
+    return sentence.replace(re, '<strong style="color:' + colorHex + '">$1</strong>');
+  }
+  return sentence;
+}
+
+// ---- State ----
+let activeIndex = 0;                              // which category is currently active (0–3)
+let bucketContents = [[], [], [], []];           // words currently in each bucket (pending, not yet checked)
+let completedBuckets = [false, false, false, false];
+let poolWords = [];                              // words currently in the pool
+
+// ---- DOM refs ----
+const bucketsEl = document.getElementById('buckets');
+const poolEl = document.getElementById('pool');
+const checkBtn = document.getElementById('checkBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let selected = null;   // tap-to-place selection
+let fbOpen = [false, false, false, false]; // collapsed state per bucket
+
+function toggleFbOpen(idx) {
+  fbOpen[idx] = !fbOpen[idx];
+  render();
+}
+let dragged = null;    // current drag source chip
+
+// ---- Chip creation ----
+function makeChip(word, opts) {
+  opts = opts || {};
+  const chip = document.createElement('div');
+  chip.className = 'chip' + (opts.locked ? ' locked-chip' : '');
+  chip.textContent = word;
+  chip.dataset.word = word;
+  if (!opts.locked) {
+    chip.setAttribute('draggable', 'true');
+    chip.addEventListener('dragstart', onDragStart);
+    chip.addEventListener('dragend', onDragEnd);
+    chip.addEventListener('click', onChipClick);
+  }
+  return chip;
+}
+
+// ---- Rendering ----
+function bucketIndexById(id) { return CATEGORIES.findIndex(c => c.id === id); }
+
+function render() {
+  clearSelection();
+  bucketsEl.innerHTML = '';
+
+  CATEGORIES.forEach((cat, idx) => {
+    const isCompleted = completedBuckets[idx];
+    const isActive = idx === activeIndex && !isCompleted;
+    const isLocked = idx > activeIndex && !isCompleted;
+
+    const b = document.createElement('div');
+    b.className = 'bucket ' + COLOR_CLASS[cat.color];
+    b.dataset.index = idx;
+    if (isLocked) b.classList.add('locked');
+
+    // header
+    const head = document.createElement('div');
+    head.className = 'bucket-head';
+
+    const nameWrap = document.createElement('div');
+    nameWrap.className = 'bucket-name';
+    nameWrap.innerHTML = cat.label + ' <span class="proto">(' + cat.prototype + ')</span>';
+    if (isCompleted) {
+      const done = document.createElement('span');
+      done.className = 'done-tag';
+      done.textContent = '✓ Done';
+      nameWrap.appendChild(done);
+    }
+    head.appendChild(nameWrap);
+
+    // countdown badge
+    const remaining = cat.count - bucketContents[idx].length;
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    if (isCompleted || remaining <= 0) {
+      badge.classList.add('full');
+      badge.textContent = '✓ Full';
+    } else {
+      badge.textContent = remaining + ' left';
+    }
+    head.appendChild(badge);
+    b.appendChild(head);
+
+    // description
+    const desc = document.createElement('p');
+    desc.className = 'bucket-desc';
+    desc.textContent = cat.desc;
+    b.appendChild(desc);
+
+    if (isLocked) {
+      const lock = document.createElement('div');
+      lock.className = 'lock-overlay';
+      lock.textContent = '🔒 Complete the previous category first';
+      b.appendChild(lock);
+    } else if (isCompleted) {
+      // show inline feedback (locked-in) for the completed bucket
+      const fb = document.createElement('div');
+      fb.className = 'fb-inline' + (fbOpen[idx] ? ' open' : '');
+      fb.innerHTML = buildFeedbackHTML(cat, bucketContents[idx], idx);
+      b.appendChild(fb);
+    } else {
+      // active bucket: interactive dropzone
+      const dz = document.createElement('div');
+      dz.className = 'dropzone';
+      dz.dataset.bucket = cat.id;
+      dz.dataset.color = cat.color;
+      bucketContents[idx].forEach(w => dz.appendChild(makeChip(w)));
+      if (bucketContents[idx].length === 0) dz.classList.add('empty');
+      b.appendChild(dz);
+      registerDropZone(dz, b);
+    }
+
+    bucketsEl.appendChild(b);
+  });
+
+  renderPool();
+  updateCheckButton();
+}
+
+function renderPool() {
+  poolEl.innerHTML = '';
+  poolWords.forEach(w => poolEl.appendChild(makeChip(w)));
+}
+
+// Feedback HTML for a completed bucket (correct chips only remain in bucketContents)
+function buildFeedbackHTML(cat, words, idx) {
+  const isOpen = fbOpen[idx];
+  let sentencesHtml = '';
+  words.forEach(word => {
+    sentencesHtml += '<div class="fb-item">' +
+      '<div class="fb-label ok">✓ ' + word + '</div>' +
+      '<div class="fb-sentence">' + highlighted(word, '#16a34a') + '</div>' +
+    '</div>';
+  });
+  return '<div class="fb-summary">' +
+    '<span class="fb-summary-count">' + words.length + ' word' + (words.length !== 1 ? 's' : '') + ' correct</span>' +
+    '<button class="fb-toggle" onclick="toggleFbOpen(' + idx + ')">' + (isOpen ? 'Hide ▲' : 'Show sentences ▼') + '</button>' +
+  '</div>' +
+  '<div class="fb-sentences">' + sentencesHtml + '</div>';
+}
+
+// ---- Check button state ----
+function updateCheckButton() {
+  const cat = CATEGORIES[activeIndex];
+  if (!cat || completedBuckets[activeIndex] === undefined) return;
+  // if everything is done
+  const allDone = completedBuckets.every(Boolean);
+  if (allDone) {
+    checkBtn.textContent = 'All Complete';
+    checkBtn.disabled = true;
+    return;
+  }
+  checkBtn.textContent = 'Check ' + catButtonName(cat);
+  const remaining = cat.count - bucketContents[activeIndex].length;
+  checkBtn.disabled = remaining > 0;
+}
+
+// ---- Drag & drop ----
+function onDragStart(e) {
+  dragged = e.currentTarget;
+  dragged.classList.add('dragging');
+  clearSelection();
+  if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragged.dataset.word); }
+}
+function onDragEnd() {
+  if (dragged) dragged.classList.remove('dragging');
+  dragged = null;
+  document.querySelectorAll('.dropzone').forEach(d => d.classList.remove('dragover'));
+  document.querySelectorAll('.bucket').forEach(b => b.classList.remove('glow'));
+  poolEl.classList.remove('dragover');
+}
+
+function registerDropZone(dz, bucket) {
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); bucket.classList.add('glow'); });
+  dz.addEventListener('dragleave', e => { if (!dz.contains(e.relatedTarget)) { dz.classList.remove('dragover'); bucket.classList.remove('glow'); } });
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('dragover'); bucket.classList.remove('glow');
+    if (dragged) {
+      const word = dragged.dataset.word;
+      placeInActiveBucket(word);
+    }
+  });
+}
+
+poolEl.addEventListener('dragover', e => { e.preventDefault(); poolEl.classList.add('dragover'); });
+poolEl.addEventListener('dragleave', e => { if (!poolEl.contains(e.relatedTarget)) poolEl.classList.remove('dragover'); });
+poolEl.addEventListener('drop', e => {
+  e.preventDefault();
+  poolEl.classList.remove('dragover');
+  if (dragged) {
+    const word = dragged.dataset.word;
+    returnToPool(word);
+  }
+});
+
+// ---- Move helpers (state-driven) ----
+function placeInActiveBucket(word) {
+  // only the active bucket accepts chips
+  const idx = activeIndex;
+  if (completedBuckets[idx]) return;
+  // remove from pool if present
+  const pi = poolWords.indexOf(word);
+  if (pi !== -1) {
+    poolWords.splice(pi, 1);
+    bucketContents[idx].push(word);
+    render();
+    return;
+  }
+  // if the chip is already in the active bucket, nothing changes
+}
+
+function returnToPool(word) {
+  // remove from the active bucket if present
+  const idx = activeIndex;
+  if (completedBuckets[idx]) return;
+  const bi = bucketContents[idx].indexOf(word);
+  if (bi !== -1) {
+    bucketContents[idx].splice(bi, 1);
+    if (poolWords.indexOf(word) === -1) poolWords.push(word);
+    render();
+  }
+}
+
+// ---- Tap-to-place ----
+const previewEl = document.getElementById('preview');
+const previewSentenceEl = document.getElementById('preview-sentence');
+
+function showPreview(word) {
+  const sentence = SENTENCES[word];
+  if (!sentence || !previewEl) return;
+  const token = HIGHLIGHT[word] || word;
+  const esc = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('(' + esc + ')', 'i');
+
+  let html;
+  if (WORD_HOME[word] === 'contrast') {
+    // Split sentence at the transition word; color each clause differently
+    const match = sentence.match(re);
+    if (match) {
+      const idx = sentence.search(re);
+      const before = sentence.slice(0, idx);
+      const after  = sentence.slice(idx + match[0].length);
+      html = '<span style="color:#1e40af;font-weight:500">' + before + '</span>' +
+             '<strong style="color:#374151;background:#FEF08A;padding:0 3px;border-radius:3px">' + match[0] + '</strong>' +
+             '<span style="color:#9a3412;font-weight:500">' + after + '</span>';
+    } else {
+      html = sentence;
+    }
+  } else {
+    html = sentence.replace(re, '<strong style="color:#1D4ED8">$1</strong>');
+  }
+
+  previewSentenceEl.innerHTML = html;
+  previewEl.style.display = 'block';
+}
+
+function hidePreview() {
+  if (previewEl) previewEl.style.display = 'none';
+}
+
+function clearSelection() {
+  if (selected) { selected.classList.remove('selected'); }
+  selected = null;
+  hidePreview();
+}
+function onChipClick(e) {
+  e.stopPropagation();
+  const chip = e.currentTarget;
+  if (selected === chip) { clearSelection(); return; }
+  clearSelection();
+  selected = chip;
+  chip.classList.add('selected');
+  showPreview(chip.dataset.word);
+}
+
+bucketsEl.addEventListener('click', e => {
+  if (!selected) return;
+  const dz = e.target.closest('.dropzone');
+  if (dz) {
+    const bucket = dz.closest('.bucket');
+    if (bucket && parseInt(bucket.dataset.index, 10) === activeIndex) {
+      const word = selected.dataset.word;
+      placeInActiveBucket(word);
+    }
+  }
+});
+poolEl.addEventListener('click', e => {
+  if (selected && (e.target === poolEl || (e.target.classList && e.target.classList.contains('chip') && poolEl.contains(e.target)))) {
+    // only return chips that currently sit in the active bucket
+    const word = selected.dataset.word;
+    if (bucketContents[activeIndex].indexOf(word) !== -1) {
+      returnToPool(word);
+    }
+  }
+});
+document.body.addEventListener('click', () => { clearSelection(); });
+
+// ---- Check answers (active bucket only) ----
+checkBtn.addEventListener('click', () => {
+  const idx = activeIndex;
+  if (completedBuckets[idx]) return;
+  const cat = CATEGORIES[idx];
+  const placed = bucketContents[idx].slice();
+
+  const correct = [];
+  const wrong = [];
+  placed.forEach(word => {
+    if (WORD_HOME[word] === cat.id) correct.push(word);
+    else wrong.push(word);
+  });
+
+  // Build inline feedback for this bucket (before mutating layout)
+  const bucketEl = bucketsEl.querySelector('.bucket[data-index="' + idx + '"]');
+  const dz = bucketEl ? bucketEl.querySelector('.dropzone') : null;
+
+  if (dz) {
+    let html = '';
+    placed.forEach(word => {
+      const home = WORD_HOME[word];
+      const isCorrect = home === cat.id;
+      if (isCorrect) {
+        html += '<div class="fb-item">' +
+          '<div class="fb-label ok">✓ ' + word + '</div>' +
+          '<div class="fb-sentence">' + highlighted(word, '#16a34a') + '</div>' +
+        '</div>';
+      } else {
+        const homeCat = CATEGORIES.find(c => c.id === home);
+        const corrWord = homeCat.words.find(w => w !== word) || homeCat.words[0];
+        html += '<div class="fb-item">' +
+          '<div class="fb-label bad">✗ ' + word + ' — belongs in ' + CAT_NAME[home] + '</div>' +
+          '<div class="fb-sentence">' + highlighted(word, '#dc2626') + '</div>' +
+          '<div class="fb-correction"><span class="cl">Correct (' + CAT_NAME[home] + '):</span> ' + highlighted(corrWord, '#16a34a') + '</div>' +
+        '</div>';
+      }
+    });
+    const correctCount = placed.filter(w => WORD_HOME[w] === cat.id).length;
+    const wrongCount = placed.length - correctCount;
+    const summaryText = correctCount + ' correct' + (wrongCount > 0 ? ', ' + wrongCount + ' returned to pool' : '');
+    const wrappedHtml = '<div class="fb-summary">' +
+      '<span class="fb-summary-count">' + summaryText + '</span>' +
+      '<button class="fb-toggle" onclick="toggleFbOpen(' + idx + ')">' + (fbOpen[idx] ? 'Hide ▲' : 'Show sentences ▼') + '</button>' +
+    '</div><div class="fb-sentences">' + html + '</div>';
+    dz.className = 'fb-inline' + (fbOpen[idx] ? ' open' : '');
+    dz.innerHTML = wrappedHtml;
+  }
+
+  // Only correct chips remain in the (now completed) bucket
+  bucketContents[idx] = correct;
+
+  // Wrong chips return to the pool (append to end)
+  wrong.forEach(word => { if (poolWords.indexOf(word) === -1) poolWords.push(word); });
+  renderPool();
+
+  // If any chips were wrong, the bucket is NOT complete — the learner must fix them.
+  if (wrong.length > 0) {
+    // re-render so the dropzone becomes interactive again, keeping correct chips in place
+    render();
+    // scroll the active bucket into view
+    const el = bucketsEl.querySelector('.bucket[data-index="' + idx + '"]');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+
+  // All correct — mark complete, add Done tag, lock chips, unlock next
+  completedBuckets[idx] = true;
+
+  if (bucketEl) {
+    // add Done tag to header
+    const nameWrap = bucketEl.querySelector('.bucket-name');
+    if (nameWrap && !nameWrap.querySelector('.done-tag')) {
+      const done = document.createElement('span');
+      done.className = 'done-tag';
+      done.textContent = '✓ Done';
+      nameWrap.appendChild(done);
+    }
+    // update badge to Full
+    const badge = bucketEl.querySelector('.badge');
+    if (badge) { badge.classList.add('full'); badge.textContent = '✓ Full'; }
+  }
+
+  // Advance active index to next incomplete bucket
+  const nextIndex = idx + 1;
+  if (nextIndex < CATEGORIES.length) {
+    activeIndex = nextIndex;
+    render();
+    // flash the newly unlocked bucket
+    const nextEl = bucketsEl.querySelector('.bucket[data-index="' + nextIndex + '"]');
+    if (nextEl) {
+      nextEl.classList.add('just-unlocked');
+      setTimeout(() => nextEl.classList.remove('just-unlocked'), 1000);
+      nextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  } else {
+    // all done
+    activeIndex = CATEGORIES.length - 1;
+    render();
+  }
+});
+
+// ---- Reset ----
+resetBtn.addEventListener('click', () => {
+  initState();
+  render();
+});
+
+function initState() {
+  activeIndex = 0;
+  bucketContents = [[], [], [], []];
+  completedBuckets = [false, false, false, false];
+  fbOpen = [false, false, false, false];
+  const all = [];
+  CATEGORIES.forEach(c => c.words.forEach(w => all.push(w)));
+  poolWords = shuffle(all);
+}
+
+// ---- Init ----
+initState();
+render();
+</script>
+</body>
+</html>
